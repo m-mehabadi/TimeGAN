@@ -20,6 +20,7 @@ Output: discriminative score (np.abs(classification accuracy - 0.5))
 
 # Necessary Packages
 import tensorflow as tf
+import tensorflow.compat.v1 as tf1
 import numpy as np
 from sklearn.metrics import accuracy_score
 from utils import train_test_divide, extract_time, batch_generator
@@ -36,7 +37,7 @@ def discriminative_score_metrics (ori_data, generated_data):
     - discriminative_score: np.abs(classification accuracy - 0.5)
   """
   # Initialization on the Graph
-  tf.reset_default_graph()
+  tf1.reset_default_graph()
 
   # Basic Parameters
   no, seq_len, dim = np.asarray(ori_data).shape    
@@ -54,11 +55,11 @@ def discriminative_score_metrics (ori_data, generated_data):
     
   # Input place holders
   # Feature
-  X = tf.placeholder(tf.float32, [None, max_seq_len, dim], name = "myinput_x")
-  X_hat = tf.placeholder(tf.float32, [None, max_seq_len, dim], name = "myinput_x_hat")
+  X = tf1.placeholder(tf1.float32, [None, max_seq_len, dim], name = "myinput_x")
+  X_hat = tf1.placeholder(tf1.float32, [None, max_seq_len, dim], name = "myinput_x_hat")
     
-  T = tf.placeholder(tf.int32, [None], name = "myinput_t")
-  T_hat = tf.placeholder(tf.int32, [None], name = "myinput_t_hat")
+  T = tf1.placeholder(tf1.int32, [None], name = "myinput_t")
+  T_hat = tf1.placeholder(tf1.int32, [None], name = "myinput_t_hat")
     
   # discriminator function
   def discriminator (x, t):
@@ -73,12 +74,12 @@ def discriminative_score_metrics (ori_data, generated_data):
       - y_hat: discriminator output
       - d_vars: discriminator variables
     """
-    with tf.variable_scope("discriminator", reuse = tf.AUTO_REUSE) as vs:
-      d_cell = tf.nn.rnn_cell.GRUCell(num_units=hidden_dim, activation=tf.nn.tanh, name = 'd_cell')
-      d_outputs, d_last_states = tf.nn.dynamic_rnn(d_cell, x, dtype=tf.float32, sequence_length = t)
-      y_hat_logit = tf.contrib.layers.fully_connected(d_last_states, 1, activation_fn=None) 
-      y_hat = tf.nn.sigmoid(y_hat_logit)
-      d_vars = [v for v in tf.all_variables() if v.name.startswith(vs.name)]
+    with tf1.variable_scope("discriminator", reuse = tf1.AUTO_REUSE) as vs:
+      d_cell = tf1.nn.rnn_cell.GRUCell(num_units=hidden_dim, activation=tf1.nn.tanh, name = 'd_cell')
+      d_outputs, d_last_states = tf1.nn.dynamic_rnn(d_cell, x, dtype=tf1.float32, sequence_length = t)
+      y_hat_logit = tf1.layers.dense(d_last_states, 1) 
+      y_hat = tf1.nn.sigmoid(y_hat_logit)
+      d_vars = [v for v in tf1.all_variables() if v.name.startswith(vs.name)]
     
     return y_hat_logit, y_hat, d_vars
     
@@ -86,19 +87,19 @@ def discriminative_score_metrics (ori_data, generated_data):
   y_logit_fake, y_pred_fake, _ = discriminator(X_hat, T_hat)
         
   # Loss for the discriminator
-  d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = y_logit_real, 
-                                                                       labels = tf.ones_like(y_logit_real)))
-  d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = y_logit_fake, 
-                                                                       labels = tf.zeros_like(y_logit_fake)))
+  d_loss_real = tf1.reduce_mean(tf1.nn.sigmoid_cross_entropy_with_logits(logits = y_logit_real, 
+                                                                       labels = tf1.ones_like(y_logit_real)))
+  d_loss_fake = tf1.reduce_mean(tf1.nn.sigmoid_cross_entropy_with_logits(logits = y_logit_fake, 
+                                                                       labels = tf1.zeros_like(y_logit_fake)))
   d_loss = d_loss_real + d_loss_fake
     
   # optimizer
-  d_solver = tf.train.AdamOptimizer().minimize(d_loss, var_list = d_vars)
+  d_solver = tf1.train.AdamOptimizer().minimize(d_loss, var_list = d_vars)
         
   ## Train the discriminator   
   # Start session and initialize
-  sess = tf.Session()
-  sess.run(tf.global_variables_initializer())
+  sess = tf1.Session()
+  sess.run(tf1.global_variables_initializer())
     
   # Train/test division for both original and generated data
   train_x, train_x_hat, test_x, test_x_hat, train_t, train_t_hat, test_t, test_t_hat = \

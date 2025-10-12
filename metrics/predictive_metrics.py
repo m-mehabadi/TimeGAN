@@ -18,6 +18,7 @@ Note: Use Post-hoc RNN to predict one-step ahead (last feature)
 
 # Necessary Packages
 import tensorflow as tf
+import tensorflow.compat.v1 as tf1
 import numpy as np
 from sklearn.metrics import mean_absolute_error
 from utils import extract_time
@@ -34,7 +35,7 @@ def predictive_score_metrics (ori_data, generated_data):
     - predictive_score: MAE of the predictions on the original data
   """
   # Initialization on the Graph
-  tf.reset_default_graph()
+  tf1.reset_default_graph()
 
   # Basic Parameters
   no, seq_len, dim = np.asarray(ori_data).shape
@@ -51,9 +52,9 @@ def predictive_score_metrics (ori_data, generated_data):
   batch_size = 128
     
   # Input place holders
-  X = tf.placeholder(tf.float32, [None, max_seq_len-1, dim-1], name = "myinput_x")
-  T = tf.placeholder(tf.int32, [None], name = "myinput_t")    
-  Y = tf.placeholder(tf.float32, [None, max_seq_len-1, 1], name = "myinput_y")
+  X = tf1.placeholder(tf1.float32, [None, max_seq_len-1, dim-1], name = "myinput_x")
+  T = tf1.placeholder(tf1.int32, [None], name = "myinput_t")    
+  Y = tf1.placeholder(tf1.float32, [None, max_seq_len-1, 1], name = "myinput_y")
     
   # Predictor function
   def predictor (x, t):
@@ -67,25 +68,25 @@ def predictive_score_metrics (ori_data, generated_data):
       - y_hat: prediction
       - p_vars: predictor variables
     """
-    with tf.variable_scope("predictor", reuse = tf.AUTO_REUSE) as vs:
-      p_cell = tf.nn.rnn_cell.GRUCell(num_units=hidden_dim, activation=tf.nn.tanh, name = 'p_cell')
-      p_outputs, p_last_states = tf.nn.dynamic_rnn(p_cell, x, dtype=tf.float32, sequence_length = t)
-      y_hat_logit = tf.contrib.layers.fully_connected(p_outputs, 1, activation_fn=None) 
-      y_hat = tf.nn.sigmoid(y_hat_logit)
-      p_vars = [v for v in tf.all_variables() if v.name.startswith(vs.name)]
+    with tf1.variable_scope("predictor", reuse = tf1.AUTO_REUSE) as vs:
+      p_cell = tf1.nn.rnn_cell.GRUCell(num_units=hidden_dim, activation=tf1.nn.tanh, name = 'p_cell')
+      p_outputs, p_last_states = tf1.nn.dynamic_rnn(p_cell, x, dtype=tf1.float32, sequence_length = t)
+      y_hat_logit = tf1.layers.dense(p_outputs, 1) 
+      y_hat = tf1.nn.sigmoid(y_hat_logit)
+      p_vars = [v for v in tf1.all_variables() if v.name.startswith(vs.name)]
     
     return y_hat, p_vars
     
   y_pred, p_vars = predictor(X, T)
   # Loss for the predictor
-  p_loss = tf.losses.absolute_difference(Y, y_pred)
+  p_loss = tf1.losses.absolute_difference(Y, y_pred)
   # optimizer
-  p_solver = tf.train.AdamOptimizer().minimize(p_loss, var_list = p_vars)
+  p_solver = tf1.train.AdamOptimizer().minimize(p_loss, var_list = p_vars)
         
   ## Training    
   # Session start
-  sess = tf.Session()
-  sess.run(tf.global_variables_initializer())
+  sess = tf1.Session()
+  sess.run(tf1.global_variables_initializer())
     
   # Training using Synthetic dataset
   for itt in range(iterations):

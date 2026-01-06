@@ -7,7 +7,7 @@ from timegan import timegan
 
 DATA_PATH = './data/ETT-small/ETTh1.csv'
 SEQ_LEN = 24
-ITERATIONS = 10000
+ITERATIONS = 10
 BATCH_SIZE = 128
 HIDDEN_DIM = 24
 NUM_LAYERS = 3

@@ -5,7 +5,7 @@ warnings.filterwarnings("ignore")
 
 from timegan import timegan
 
-DATA_PATH = './data/ETT-small/ETTh1.csv'
+DATA_PATH = '../data/ETT-small/ETTh1.csv'
 SEQ_LEN = 24
 ITERATIONS = 10
 BATCH_SIZE = 128

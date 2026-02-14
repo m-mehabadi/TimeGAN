@@ -21,6 +21,7 @@ import tensorflow as tf
 import tensorflow.compat.v1 as tf1
 import numpy as np
 from utils import extract_time, rnn_cell, random_generator, batch_generator
+import bench
 
 tf1.disable_v2_behavior()
 
@@ -235,8 +236,9 @@ def timegan (ori_data, parameters):
     # Train embedder        
     _, step_e_loss = sess.run([E0_solver, E_loss_T0], feed_dict={X: X_mb, T: T_mb})        
     # Checkpoint
-    if itt % 1000 == 0:
-      print('step: '+ str(itt) + '/' + str(iterations) + ', e_loss: ' + str(np.round(np.sqrt(step_e_loss),4)) ) 
+    # if itt % log_interval == 0 or itt == iterations - 1:
+    e_loss_val = float(np.round(np.sqrt(step_e_loss), 4))
+    bench.log_metrics({"e_loss": e_loss_val}, step=itt)
       
   print('Finish Embedding Network Training')
     
@@ -251,8 +253,9 @@ def timegan (ori_data, parameters):
     # Train generator       
     _, step_g_loss_s = sess.run([GS_solver, G_loss_S], feed_dict={Z: Z_mb, X: X_mb, T: T_mb})       
     # Checkpoint
-    if itt % 1000 == 0:
-      print('step: '+ str(itt)  + '/' + str(iterations) +', s_loss: ' + str(np.round(np.sqrt(step_g_loss_s),4)) )
+    # if itt % log_interval == 0 or itt == iterations - 1:
+    s_loss_val = float(np.round(np.sqrt(step_g_loss_s), 4))
+    bench.log_metrics({"s_loss": s_loss_val}, step=itt)
       
   print('Finish Training with Supervised Loss Only')
     
@@ -283,13 +286,6 @@ def timegan (ori_data, parameters):
       _, step_d_loss = sess.run([D_solver, D_loss], feed_dict={X: X_mb, T: T_mb, Z: Z_mb})
         
     # Print multiple checkpoints
-    if itt % 1000 == 0:
-      print('step: '+ str(itt) + '/' + str(iterations) + 
-            ', d_loss: ' + str(np.round(step_d_loss,4)) + 
-            ', g_loss_u: ' + str(np.round(step_g_loss_u,4)) + 
-            ', g_loss_s: ' + str(np.round(np.sqrt(step_g_loss_s),4)) + 
-            ', g_loss_v: ' + str(np.round(step_g_loss_v,4)) + 
-            ', e_loss_t0: ' + str(np.round(np.sqrt(step_e_loss_t0),4))  )
   print('Finish Joint Training')
     
   ## Synthetic data generation
